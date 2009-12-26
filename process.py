@@ -72,7 +72,8 @@ for year in range(2009,2010):
               description += unicode(bill.next.extract())
             bill.extract()
             pictures.add(fixLinks(bill['href']))
-          i += 1
+          else:
+            i += 1
         colLinks = dict([(fixLinks(i['href']),extractText(i)) for i in colsoup.findAll('a') if i.has_key('href')])
 
 
@@ -102,7 +103,7 @@ for year in range(2009,2010):
             colLinks = {}
 
         elif colname == "dates":
-          rawDates = extractText(colsoup).replace(" '"," 20")
+          rawDates = extractText(colsoup).replace(" '"," 20").replace('Jan %d' % year, 'Jan %d' % (year+1))
           rawDates = re.sub('(\d)(st|nd|rd|th)', r'\1', rawDates)
           rawDates = re.sub('^(\d+) (-|and) (\d+) (.*)$', r'\1 \4 \2 \3 \4', rawDates)
 
@@ -203,17 +204,17 @@ playId = 1
 removedDupes = 0
 while playId < len(plays):
   for compare in range(1,1+max(playId,4)): # compare up to the last 4 records
+    if playId < compare: continue
     matchingKeys = set()
     nonMatchingKeys = set()
     for key in plays[playId].keys():
       if plays[playId-compare].has_key(key):
-        if plays[playId][key] and plays[playId-compare][key]: # Check both keys have data
-          if plays[playId][key]==plays[playId-compare][key]: # See if it's the same data
-            matchingKeys.add(key)
-          else:
-            nonMatchingKeys.add(key)
+        if plays[playId][key]==plays[playId-compare][key]: # See if it's the same data
+          matchingKeys.add(key)
+        else:
+          nonMatchingKeys.add(key)
 
-    if nonMatchingKeys.issubset(set(['dates','description','links','images'])): # Certainly a dupe - nothing disagrees. There may data missing from one or other.
+    if plays[playId]['cast'] and ('cast' in matchingKeys or nonMatchingKeys.issubset(set(['dates','description','links','images']))): # Certainly a dupe - nothing disagrees. There may data missing from one or other.
       # Mash data together & remove it.
       for key in plays[playId].keys():
         if key in ('links','images','dates'):
