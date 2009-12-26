@@ -2,7 +2,7 @@
 # vim: set fileencoding=UTF-8 :
 import BeautifulSoup
 from imageList import getTitleOfImage
-import sys
+import sys, re, time
 YAML = False
 
 def extractText(soup):
@@ -35,7 +35,7 @@ plays = []
 castLinks = {}
 theatres = {}
 
-for year in range(2000,2010):
+for year in range(2009,2010):
   soup = BeautifulSoup.BeautifulSoup(open("diary"+str(year)+str(year+1)+".html"))
   for table in soup.findAll('table'):
     producer = ""
@@ -103,6 +103,8 @@ for year in range(2000,2010):
 
         elif colname == "dates":
           rawDates = extractText(colsoup).replace(" '"," 20")
+          rawDates = re.sub('(\d)(st|nd|rd|th)', r'\1', rawDates)
+          rawDates = re.sub('^(\d+) (-|and) (\d+) (.*)$', r'\1 \4 \2 \3 \4', rawDates)
 
           # Split into start and end date
           if " to " in rawDates:
@@ -111,6 +113,8 @@ for year in range(2000,2010):
             dates = rawDates.split(" - ",1)
           elif " -" in rawDates:
             dates = rawDates.split(" -",1)
+          elif " and " in rawDates:
+            dates = rawDates.split(" and ")
           elif rawDates.lower().startswith("until "):
             dates = ['',rawDates[6:]]
           elif rawDates.lower().startswith("from "):
@@ -118,7 +122,7 @@ for year in range(2000,2010):
           elif not rawDates:
             dates = ['','']
           else:
-            dates = [rawDates,"!!ERROR!!"]
+            dates = [rawDates, rawDates]
 
           # Fix dates with month but no year
           for i in 0,1:
@@ -126,6 +130,8 @@ for year in range(2000,2010):
               dates[i]+=' ' + str(year)
             if dates[i][-3:].lower() in ("jan","feb"):
               dates[i]+=' ' + str(year+1)
+            if dates[i]:
+              dates[i] = time.strftime('%Y-%m-%d', time.strptime(dates[i], "%d %b %Y"))
 
         elif colname in ('pantomime','production'):
           # If part of it is bold, that's the title.
